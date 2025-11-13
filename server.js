@@ -1,0 +1,21 @@
+const express = require('express');
+require('dotenv').config();
+
+const app = express();
+app.use(express.json());
+
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+const institutionRoutes = require('./routes/institutionRoutes');
+app.use('/api/institution', institutionRoutes);
+
+const vaRoutes = require('./routes/vaRoutes');
+app.use('/api/va', vaRoutes);
+
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payment', paymentRoutes);
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
