@@ -16,6 +16,15 @@ app.use('/api/va', vaRoutes);
 const paymentRoutes = require('./routes/paymentRoutes');
 app.use('/api/payment', paymentRoutes);
 
+const transactionRoutes = require('./routes/transactionRoutes');
+app.use('/api/transaction', transactionRoutes);
+
+const settlementRoutes = require('./routes/settlementRoutes');
+app.use('/api/settlement', settlementRoutes);
+
+const reportRoutes = require('./routes/reportRoutes');
+app.use('/api/report', reportRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
