@@ -34,5 +34,8 @@ app.use("/api/settlement", settlementRoutes);
 const reportRoutes = require("./routes/reportRoutes");
 app.use("/api/report", reportRoutes);
 
+const institutionListRoutes = require("./routes/institutionListRoutes");
+app.use("/api/institution-list", institutionListRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));

@@ -1,13 +1,28 @@
 const pool = require('../config/db');
 
 // CREATE
+// exports.createInstitution = async (req, res) => {
+//   try {
+//     const {institution_code, institution_name, address, email, phone } = req.body;
+//     const result = await pool.query(
+//       `INSERT INTO "Institution" (institution_name, address, email, phone)
+//        VALUES ($1, $2, $3, $4) RETURNING *`,
+//       [institution_name, address, email, phone]
+//     );
+//     res.status(201).json(result.rows[0]);
+//   } catch (error) {
+//     console.error('Create institution error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
 exports.createInstitution = async (req, res) => {
   try {
-    const { institution_name, address, email, phone } = req.body;
+    const {institution_code, institution_name, client_name, login_id, email, backend_service } = req.body;
     const result = await pool.query(
-      `INSERT INTO "Institution" (institution_name, address, email, phone)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [institution_name, address, email, phone]
+      `INSERT INTO "Institution" (institution_code,institution_name, client_name, login_id, email, backend_service)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [institution_code, institution_name, client_name, login_id, email, backend_service]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
