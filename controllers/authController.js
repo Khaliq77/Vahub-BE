@@ -37,9 +37,9 @@
 //   }
 // };
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const pool = require('../config/db');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const pool = require("../config/db");
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -51,30 +51,39 @@ exports.login = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: 'Username tidak ditemukan' });
+      return res.status(400).json({ message: "Username tidak ditemukan" });
     }
 
     const user = result.rows[0];
 
     // 🔍 Ini bagian penting
-    console.log('Password input:', password);
-    console.log('Hash from DB:', user.password_hash);
+    console.log("Password input:", password);
+    console.log("Hash from DB:", user.password_hash);
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
-      return res.status(400).json({ message: 'Password salah' });
+      return res.status(400).json({ message: "Password salah" });
     }
 
     const token = jwt.sign(
       { user_id: user.user_id, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: "1h" }
     );
 
-    res.json({ message: 'Login berhasil', token });
+    res.json({
+      message: "Login berhasil",
+      token,
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        user_type: user.user_type,
+        user_status: user.status,
+      },
+    });
   } catch (error) {
-    console.error('error:', error.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error("error:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 exports.register = async (req, res) => {
@@ -86,7 +95,7 @@ exports.register = async (req, res) => {
       [username]
     );
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: 'Username sudah terdaftar' });
+      return res.status(400).json({ message: "Username sudah terdaftar" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -96,9 +105,9 @@ exports.register = async (req, res) => {
       [username, hashedPassword, full_name, email]
     );
 
-    res.status(201).json({ message: 'Registrasi berhasil' });
+    res.status(201).json({ message: "Registrasi berhasil" });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Register error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
