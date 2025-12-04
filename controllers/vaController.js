@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 // CREATE
 exports.createVA = async (req, res) => {
@@ -10,8 +10,13 @@ exports.createVA = async (req, res) => {
       'SELECT * FROM "Institution" WHERE institution_id = $1',
       [institution_id]
     );
+
     if (inst.rows.length === 0)
-      return res.status(400).json({ message: 'Institution not found' });
+      return res.status(400).json({ message: "Institution not found" });
+
+    if (checkVA.rows.length > 0) {
+      return res.status(400).json({ message: "VA Number sudah digunakan" });
+    }
 
     const result = await pool.query(
       `INSERT INTO "VirtualAccount" (institution_id, va_number, customer_name, balance)
@@ -22,8 +27,8 @@ exports.createVA = async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('Create VA error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Create VA error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -38,7 +43,7 @@ exports.getVAs = async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -55,11 +60,11 @@ exports.getVAById = async (req, res) => {
     );
 
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Virtual Account not found' });
+      return res.status(404).json({ message: "Virtual Account not found" });
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -77,12 +82,12 @@ exports.updateVA = async (req, res) => {
     );
 
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Virtual Account not found' });
+      return res.status(404).json({ message: "Virtual Account not found" });
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Update VA error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Update VA error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -91,8 +96,8 @@ exports.deleteVA = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM "VirtualAccount" WHERE va_id = $1', [id]);
-    res.json({ message: 'Virtual Account deleted successfully' });
+    res.json({ message: "Virtual Account deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };

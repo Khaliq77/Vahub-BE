@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 // CREATE
 // exports.createInstitution = async (req, res) => {
@@ -18,26 +18,53 @@ const pool = require('../config/db');
 
 exports.createInstitution = async (req, res) => {
   try {
-    const {institution_code, institution_name, client_name, login_id, email, backend_service } = req.body;
+    const {
+      institution_code,
+      institution_name,
+      client_name,
+      login_id,
+      email,
+      backend_service,
+    } = req.body;
+
+    // Cek duplicate institution
+    const check = await pool.query(
+      `SELECT institution_id FROM "Institution" WHERE institution_name = $1`,
+      [institution_name]
+    );
+
+    if (check.rows.length > 0) {
+      return res.status(400).json({ message: "Institution sudah terdaftar" });
+    }
+
     const result = await pool.query(
       `INSERT INTO "Institution" (institution_code,institution_name, client_name, login_id, email, backend_service)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [institution_code, institution_name, client_name, login_id, email, backend_service]
+      [
+        institution_code,
+        institution_name,
+        client_name,
+        login_id,
+        email,
+        backend_service,
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('Create institution error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Create institution error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // READ ALL
 exports.getInstitutions = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM "Institution" ORDER BY institution_id ASC');
+    const result = await pool.query(
+      'SELECT * FROM "Institution" ORDER BY institution_id ASC'
+    );
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -45,12 +72,15 @@ exports.getInstitutions = async (req, res) => {
 exports.getInstitutionById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM "Institution" WHERE institution_id = $1', [id]);
+    const result = await pool.query(
+      'SELECT * FROM "Institution" WHERE institution_id = $1',
+      [id]
+    );
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Institution not found' });
+      return res.status(404).json({ message: "Institution not found" });
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -66,10 +96,10 @@ exports.updateInstitution = async (req, res) => {
       [institution_name, address, email, phone, id]
     );
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Institution not found' });
+      return res.status(404).json({ message: "Institution not found" });
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -77,9 +107,11 @@ exports.updateInstitution = async (req, res) => {
 exports.deleteInstitution = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM "Institution" WHERE institution_id = $1', [id]);
-    res.json({ message: 'Institution deleted successfully' });
+    await pool.query('DELETE FROM "Institution" WHERE institution_id = $1', [
+      id,
+    ]);
+    res.json({ message: "Institution deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
