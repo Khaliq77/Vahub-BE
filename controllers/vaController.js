@@ -3,7 +3,7 @@ const pool = require("../config/db");
 // CREATE
 exports.createVA = async (req, res) => {
   try {
-    const { institution_id, va_number, customer_name, balance } = req.body;
+    const { institution_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status } = req.body;
 
     // Pastikan institution_id valid
     const inst = await pool.query(
@@ -14,15 +14,21 @@ exports.createVA = async (req, res) => {
     if (inst.rows.length === 0)
       return res.status(400).json({ message: "Institution not found" });
 
+    const checkVA = await pool.query(
+      `SELECT * FROM "VirtualAccount" WHERE va_number = $1`,
+      [va_number]
+    );
+
+
     if (checkVA.rows.length > 0) {
       return res.status(400).json({ message: "VA Number sudah digunakan" });
     }
 
     const result = await pool.query(
-      `INSERT INTO "VirtualAccount" (institution_id, va_number, customer_name, balance)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO "VirtualAccount" (institution_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
        RETURNING *`,
-      [institution_id, va_number, customer_name, balance || 0]
+      [institution_id, va_number, customer_name, customer_email || null, billing_amount || 0, billing_type, settlement_account || null, description || null, status || 'success']
     );
 
     res.status(201).json(result.rows[0]);
@@ -72,13 +78,13 @@ exports.getVAById = async (req, res) => {
 exports.updateVA = async (req, res) => {
   try {
     const { id } = req.params;
-    const { va_number, customer_name, balance } = req.body;
+    const { va_number, customer_name } = req.body;
 
     const result = await pool.query(
       `UPDATE "VirtualAccount"
-       SET va_number=$1, customer_name=$2, balance=$3
-       WHERE va_id=$4 RETURNING *`,
-      [va_number, customer_name, balance, id]
+       SET va_number=$1, customer_name=$2, 
+       WHERE va_id=$3 RETURNING *`,
+      [va_number, customer_name, id]
     );
 
     if (result.rows.length === 0)
