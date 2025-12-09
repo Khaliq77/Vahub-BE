@@ -87,7 +87,10 @@ exports.login = async (req, res) => {
   }
 };
 exports.register = async (req, res) => {
-  const { username, password, full_name, email } = req.body;
+  const { username, client_name, email, institution_code, institution_name, backend_service } = req.body;
+  const user_type = 'client';
+  const password = 'user';
+  const status = 0;
 
   try {
     const existingUser = await pool.query(
@@ -101,8 +104,12 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      'INSERT INTO "User" (username, password_hash, full_name, email) VALUES ($1, $2, $3, $4)',
-      [username, hashedPassword, full_name, email]
+      'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
+      [username, hashedPassword, client_name, email, user_type, status]
+    );
+    await pool.query(
+      'INSERT INTO "Client" (username, client_name, email, institution_name, institution_code, backend_service) VALUES ($1, $2, $3, $4, $5, $6)',
+      [username, client_name, email, institution_name, institution_code, backend_service]
     );
 
     res.status(201).json({ message: "Registrasi berhasil" });
@@ -111,3 +118,57 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+  exports.changePassword = async (req, res) => {
+  const { username, old_password, new_password } = req.body;
+
+  try {
+    // Ambil user berdasarkan username
+    const result = await pool.query(
+      'SELECT * FROM "User" WHERE username = $1',
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    const user = result.rows[0];
+
+    // Cek password lama cocok
+    const passwordMatch = await bcrypt.compare(old_password, user.password_hash);
+
+    if (!passwordMatch) {
+      return res.status(400).json({ message: "Password lama salah" });
+    }
+
+    // Hash password baru
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+
+    // Update password & status = 1
+    await pool.query(
+      `UPDATE "User"
+       SET password_hash = $1,
+           status = 1
+       WHERE username = $2`,
+      [hashedNewPassword, username]
+    );
+
+    return res.status(200).json({ message: "Password berhasil diubah" });
+
+  } catch (error) {
+    console.error("changePassword error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+  //   await pool.query(
+  //     'UPDATE INTO '
+  //     'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
+  //     [username, hashedPassword, client_name, email, user_type, status]
+  //   );
+  // } catch (error) {
+  //   console.error("Register error:", error);
+  //   res.status(500).json({ message: "Server error" });
+  // }
