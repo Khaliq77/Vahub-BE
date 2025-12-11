@@ -3,32 +3,57 @@ const pool = require("../config/db");
 // CREATE
 exports.createVA = async (req, res) => {
   try {
-    const { institution_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status } = req.body;
+    const {
+      va_number,
+      customer_name,
+      customer_email,
+      billing_amount,
+      billing_type,
+      settlement_account,
+      description,
+      status,
+    } = req.body;
 
-    // Pastikan institution_id valid
+    // Ambil client_id dari token
+    const client_id = req.user.client_id;
+
+    if (!client_id) {
+      return res.status(400).json({ message: "Client ID not found in token" });
+    }
+
+    // Memastikan client_id valid
     const inst = await pool.query(
-      'SELECT * FROM "Institution" WHERE institution_id = $1',
-      [institution_id]
+      'SELECT * FROM "Client" WHERE client_id = $1',
+      [client_id]
     );
 
     if (inst.rows.length === 0)
-      return res.status(400).json({ message: "Institution not found" });
+      return res.status(400).json({ message: "Client not found" });
 
     const checkVA = await pool.query(
       `SELECT * FROM "VirtualAccount" WHERE va_number = $1`,
       [va_number]
     );
 
-
     if (checkVA.rows.length > 0) {
       return res.status(400).json({ message: "VA Number sudah digunakan" });
     }
 
     const result = await pool.query(
-      `INSERT INTO "VirtualAccount" (institution_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status, created_at)
+      `INSERT INTO "VirtualAccount" (client_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
        RETURNING *`,
-      [institution_id, va_number, customer_name, customer_email || null, billing_amount || 0, billing_type, settlement_account || null, description || null, status || 'success']
+      [
+        client_id,
+        va_number,
+        customer_name,
+        customer_email || null,
+        billing_amount || 0,
+        billing_type,
+        settlement_account || null,
+        description || null,
+        status || "success",
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -44,7 +69,7 @@ exports.getVAs = async (req, res) => {
     const result = await pool.query(
       `SELECT v.*, i.institution_name 
        FROM "VirtualAccount" v
-       JOIN "Institution" i ON v.institution_id = i.institution_id
+       JOIN "Client" i ON v.client_id = i.client_id
        ORDER BY v.va_id ASC`
     );
     res.json(result.rows);
@@ -60,7 +85,7 @@ exports.getVAById = async (req, res) => {
     const result = await pool.query(
       `SELECT v.*, i.institution_name 
        FROM "VirtualAccount" v
-       JOIN "Institution" i ON v.institution_id = i.institution_id
+       JOIN "Client" i ON v.client_id = i.client_id
        WHERE v.va_id = $1`,
       [id]
     );

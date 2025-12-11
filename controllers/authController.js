@@ -65,8 +65,20 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Password salah" });
     }
 
+    // 🔥 Ambil client_id dari tabel Client berdasarkan username
+    const clientData = await pool.query(
+      `SELECT client_id FROM "Client" WHERE username = $1`,
+      [username]
+    );
+
+    const client_id = clientData.rows[0]?.client_id || null;
+
     const token = jwt.sign(
-      { user_id: user.user_id, username: user.username },
+      {
+        user_id: user.user_id,
+        username: user.username,
+        client_id: client_id,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -87,9 +99,16 @@ exports.login = async (req, res) => {
   }
 };
 exports.register = async (req, res) => {
-  const { username, client_name, email, institution_code, institution_name, backend_service } = req.body;
-  const user_type = 'client';
-  const password = 'user';
+  const {
+    username,
+    client_name,
+    email,
+    institution_code,
+    institution_name,
+    backend_service,
+  } = req.body;
+  const user_type = "client";
+  const password = "user";
   const status = 0;
 
   try {
@@ -109,7 +128,14 @@ exports.register = async (req, res) => {
     );
     await pool.query(
       'INSERT INTO "Client" (username, client_name, email, institution_name, institution_code, backend_service) VALUES ($1, $2, $3, $4, $5, $6)',
-      [username, client_name, email, institution_name, institution_code, backend_service]
+      [
+        username,
+        client_name,
+        email,
+        institution_name,
+        institution_code,
+        backend_service,
+      ]
     );
 
     res.status(201).json({ message: "Registrasi berhasil" });
@@ -119,7 +145,7 @@ exports.register = async (req, res) => {
   }
 };
 
-  exports.changePassword = async (req, res) => {
+exports.changePassword = async (req, res) => {
   const { username, old_password, new_password } = req.body;
 
   try {
@@ -136,7 +162,10 @@ exports.register = async (req, res) => {
     const user = result.rows[0];
 
     // Cek password lama cocok
-    const passwordMatch = await bcrypt.compare(old_password, user.password_hash);
+    const passwordMatch = await bcrypt.compare(
+      old_password,
+      user.password_hash
+    );
 
     if (!passwordMatch) {
       return res.status(400).json({ message: "Password lama salah" });
@@ -155,20 +184,18 @@ exports.register = async (req, res) => {
     );
 
     return res.status(200).json({ message: "Password berhasil diubah" });
-
   } catch (error) {
     console.error("changePassword error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
-  //   await pool.query(
-  //     'UPDATE INTO '
-  //     'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
-  //     [username, hashedPassword, client_name, email, user_type, status]
-  //   );
-  // } catch (error) {
-  //   console.error("Register error:", error);
-  //   res.status(500).json({ message: "Server error" });
-  // }
+//   await pool.query(
+//     'UPDATE INTO '
+//     'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
+//     [username, hashedPassword, client_name, email, user_type, status]
+//   );
+// } catch (error) {
+//   console.error("Register error:", error);
+//   res.status(500).json({ message: "Server error" });
+// }
