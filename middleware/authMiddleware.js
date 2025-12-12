@@ -12,7 +12,7 @@ exports.verifyToken = async (req, res, next) => {
 
   try {
     // Verifikasi token pakai secret di .env
-    const decoded = jwt.verify(toen, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded; // simpan data user ke req (misalnya user_id, username)
     // Pastikan token punya username
     if (!decoded.username) {

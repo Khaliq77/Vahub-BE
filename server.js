@@ -16,8 +16,11 @@ app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
-const institutionRoutes = require("./routes/institutionRoutes");
-app.use("/api/institution", institutionRoutes);
+// const institutionRoutes = require("./routes/institutionRoutes");
+// app.use("/api/institution", institutionRoutes);
+
+const clientRoutes = require("./routes/clientRoutes");
+app.use("/api/client", clientRoutes);
 
 const vaRoutes = require("./routes/vaRoutes");
 app.use("/api/va", vaRoutes);
