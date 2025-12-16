@@ -2,61 +2,95 @@ const pool = require("../config/db");
 
 // CREATE
 exports.createVA = async (req, res) => {
+  const client_id = req.body.client_id;
+  const data = req.body.data; // ARRAY
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return res.status(400).json({ message: "Data VA kosong" });
+  }
+
   try {
-    const {
-      va_number,
-      customer_name,
-      customer_email,
-      billing_amount,
-      billing_type,
-      settlement_account,
-      description,
-      status,
-    } = req.body;
+    const results = [];
 
-    // Ambil client_id dari token
-    const client_id = req.user.client_id;
-
-    if (!client_id) {
-      return res.status(400).json({ message: "Client ID not found in token" });
-    }
-
-    // Memastikan client_id valid
-    const inst = await pool.query(
-      'SELECT * FROM "Client" WHERE client_id = $1',
-      [client_id]
-    );
-
-    if (inst.rows.length === 0)
-      return res.status(400).json({ message: "Client not found" });
-
-    const checkVA = await pool.query(
-      `SELECT * FROM "VirtualAccount" WHERE va_number = $1`,
-      [va_number]
-    );
-
-    if (checkVA.rows.length > 0) {
-      return res.status(400).json({ message: "VA Number sudah digunakan" });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO "VirtualAccount" (client_id, va_number, customer_name, customer_email, billing_amount, billing_type, settlement_account, description, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-       RETURNING *`,
-      [
-        client_id,
+    for (const item of data) {
+      const {
         va_number,
         customer_name,
-        customer_email || null,
-        billing_amount || 0,
+        customer_email,
+        billing_amount,
         billing_type,
-        settlement_account || null,
-        description || null,
-        status || "success",
-      ]
-    );
+        settlement_account,
+        description,
+      } = item;
 
-    res.status(201).json(result.rows[0]);
+      // 🔐 VALIDASI WAJIB
+      if (!va_number || !customer_name || !billing_amount || !billing_type) {
+        return res.status(400).json({
+          message: "Field wajib tidak lengkap",
+          item,
+        });
+      }
+
+      if (!client_id) {
+        return res
+          .status(400)
+          .json({ message: "Client ID not found in token" });
+      }
+
+      // Memastikan client_id valid
+      const inst = await pool.query(
+        'SELECT * FROM "Client" WHERE client_id = $1',
+        [client_id]
+      );
+
+      if (inst.rows.length === 0)
+        return res.status(400).json({ message: "Client not found" });
+
+      const checkVA = await pool.query(
+        `SELECT * FROM "VirtualAccount" WHERE va_number = $1`,
+        [va_number]
+      );
+
+      if (checkVA.rows.length > 0) {
+        return res.status(400).json({ message: "VA Number sudah digunakan" });
+      }
+
+      const result = await pool.query(
+        `
+        INSERT INTO "VirtualAccount" (
+          client_id,
+          va_number,
+          customer_name,
+          customer_email,
+          billing_amount,
+          billing_type,
+          settlement_account,
+          description,
+          status
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'success')
+        RETURNING *
+        `,
+        [
+          client_id,
+          va_number,
+          customer_name,
+          customer_email,
+          billing_amount,
+          billing_type,
+          settlement_account,
+          description,
+        ]
+      );
+
+      results.push(result.rows[0]);
+    }
+
+    res.status(201).json({
+      message: "VA berhasil dibuat",
+      total: results.length,
+      data: results,
+    });
   } catch (error) {
     console.error("Create VA error:", error);
     res.status(500).json({ message: "Server error" });
@@ -107,7 +141,7 @@ exports.updateVA = async (req, res) => {
 
     const result = await pool.query(
       `UPDATE "VirtualAccount"
-       SET va_number=$1, customer_name=$2, 
+       SET va_number=$1, customer_name=$2
        WHERE va_id=$3 RETURNING *`,
       [va_number, customer_name, id]
     );
