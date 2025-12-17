@@ -13,7 +13,7 @@ const pool = require("../config/db");
 
 //     // Cek duplicate institution
 //     const check = await pool.query(
-//       `SELECT institution_id FROM "Institution" WHERE institution_name = $1`,
+//       `SELECT client.id FROM "Institution" WHERE institution_name = $1`,
 //       [institution_name]
 //     );
 

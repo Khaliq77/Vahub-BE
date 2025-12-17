@@ -3,15 +3,15 @@ const pool = require('../config/db');
 // Generate Settlement per Institution
 exports.generateSettlement = async (req, res) => {
   try {
-    const { institution_id } = req.body;
+    const { client_id } = req.body;
 
     // Ambil semua payment milik institution via relasi VA → institution
     const payments = await pool.query(
       `SELECT p.amount
        FROM "Payment" p
        JOIN "VirtualAccount" v ON p.va_id = v.va_id
-       WHERE v.institution_id = $1`,
-      [institution_id]
+       WHERE v.client.id = $1`,
+      [client_id]
     );
 
     if (payments.rows.length === 0)
@@ -23,10 +23,10 @@ exports.generateSettlement = async (req, res) => {
     // Insert settlement record
     const result = await pool.query(
       `INSERT INTO "Settlement" 
-       (institution_id, total_amount, total_payment, settlement_date)
+       (client.id, total_amount, total_payment, settlement_date)
        VALUES ($1, $2, $3, CURRENT_DATE)
        RETURNING *`,
-      [institution_id, total_amount, total_payment]
+      [client.id, total_amount, total_payment]
     );
 
     res.status(201).json(result.rows[0]);
@@ -43,7 +43,7 @@ exports.getSettlements = async (req, res) => {
     const result = await pool.query(
       `SELECT s.*, i.institution_name
        FROM "Settlement" s
-       JOIN "Institution" i ON s.institution_id = i.institution_id
+       JOIN "Institution" i ON s.client.id = i.client.id
        ORDER BY s.settlement_id DESC`
     );
     res.json(result.rows);
@@ -60,7 +60,7 @@ exports.getSettlementById = async (req, res) => {
     const result = await pool.query(
       `SELECT s.*, i.institution_name
        FROM "Settlement" s
-       JOIN "Institution" i ON s.institution_id = i.institution_id
+       JOIN "Institution" i ON s.client.id = i.client.id
        WHERE s.settlement_id = $1`,
       [id]
     );

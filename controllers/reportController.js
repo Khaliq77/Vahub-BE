@@ -80,9 +80,9 @@ exports.getPaymentByInstitution = async (req, res) => {
         COUNT(p.payment_id) AS total_payment,
         SUM(p.amount) AS total_amount
       FROM "Institution" i
-      LEFT JOIN "VirtualAccount" v ON v.institution_id = i.institution_id
+      LEFT JOIN "VirtualAccount" v ON v.client.id = i.client.id
       LEFT JOIN "Payment" p ON p.va_id = v.va_id
-      GROUP BY i.institution_id
+      GROUP BY i.client.id
       ORDER BY total_amount DESC NULLS LAST
     `);
 

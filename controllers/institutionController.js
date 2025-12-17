@@ -29,7 +29,7 @@ exports.createInstitution = async (req, res) => {
 
     // Cek duplicate institution
     const check = await pool.query(
-      `SELECT institution_id FROM "Institution" WHERE institution_name = $1`,
+      `SELECT client.id FROM "Institution" WHERE institution_name = $1`,
       [institution_name]
     );
 
@@ -60,7 +60,7 @@ exports.createInstitution = async (req, res) => {
 exports.getInstitutions = async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM "Institution" ORDER BY institution_id ASC'
+      'SELECT * FROM "Institution" ORDER BY client.id ASC'
     );
     res.json(result.rows);
   } catch (error) {
@@ -73,7 +73,7 @@ exports.getInstitutionById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT * FROM "Institution" WHERE institution_id = $1',
+      'SELECT * FROM "Institution" WHERE client.id = $1',
       [id]
     );
     if (result.rows.length === 0)
@@ -92,7 +92,7 @@ exports.updateInstitution = async (req, res) => {
     const result = await pool.query(
       `UPDATE "Institution"
        SET institution_name=$1, address=$2, email=$3, phone=$4
-       WHERE institution_id=$5 RETURNING *`,
+       WHERE client.id=$5 RETURNING *`,
       [institution_name, address, email, phone, id]
     );
     if (result.rows.length === 0)
@@ -107,7 +107,7 @@ exports.updateInstitution = async (req, res) => {
 exports.deleteInstitution = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM "Institution" WHERE institution_id = $1', [
+    await pool.query('DELETE FROM "Institution" WHERE client.id = $1', [
       id,
     ]);
     res.json({ message: "Institution deleted successfully" });
