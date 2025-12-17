@@ -40,6 +40,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
+const transporter = require("../utils/mailer");
+const generatePassword = require("../utils/generatePassword");
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -98,6 +100,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 exports.register = async (req, res) => {
   const {
     username,
@@ -108,7 +111,7 @@ exports.register = async (req, res) => {
     backend_service,
   } = req.body;
   const user_type = "client";
-  const password = "user";
+  // const password = "user";
   const status = 0;
 
   try {
@@ -120,7 +123,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Username sudah terdaftar" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const plainPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     await pool.query(
       'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
@@ -138,7 +142,19 @@ exports.register = async (req, res) => {
       ]
     );
 
-    res.status(201).json({ message: "Registrasi berhasil" });
+    await transporter.sendMail({
+      from: `"VAHUB Admin" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Username dan Password Akun VAHUB",
+      html: `
+        <h3>Akun VAHUB Berhasil Dibuat</h3>
+        <p><b>Username:</b> ${username}</p>
+        <p><b>Password:</b> ${plainPassword}</p>
+        <p>Silakan login dan segera ganti password Anda.</p>
+      `,
+    });
+
+    res.status(201).json({ message: "Client berhasil dibuat & email terkirim" });
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({ message: "Server error" });

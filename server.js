@@ -19,6 +19,9 @@ app.use("/api/auth", authRoutes);
 // const institutionRoutes = require("./routes/institutionRoutes");
 // app.use("/api/institution", institutionRoutes);
 
+const userRoutes = require("./routes/userRoutes");
+app.use("/api/user", userRoutes);
+
 const clientRoutes = require("./routes/clientRoutes");
 app.use("/api/client", clientRoutes);
 
