@@ -32,51 +32,150 @@ const pool = require('../config/db');
 // };
 
 
+// exports.createPayment = async (req, res) => {
+//   const { va_id, amount, transfer_method } = req.body;
+
+//   if (!va_id || !amount || !transfer_method) {
+//     return res.status(400).json({
+//       message: 'va_id, amount, dan transfer_method wajib diisi'
+//     });
+//   }
+
+//   // mapping ke format DB
+//   const transferMap = {
+//     atm: 'ATM',
+//     mobile_banking: 'MOBILE_BANKING',
+//     branch: 'BRANCH',
+//     other_bank: 'OTHER_BANK',
+//     other_payment: 'OTHER_PAYMENT'
+//   };
+
+//   const mappedTransfer = transferMap[transfer_method.toLowerCase()];
+//   if (!mappedTransfer) {
+//     return res.status(400).json({
+//       message: 'transfer_method tidak valid'
+//     });
+//   }
+
+//   try {
+//     const result = await pool.query(
+//       `
+//       INSERT INTO "Payment"
+//       (va_id, amount, transfer_method, payment_date)
+//       VALUES ($1, $2, $3, NOW())
+//       RETURNING *
+//       `,
+//       [va_id, amount, mappedTransfer]
+//     );
+
+//     res.status(201).json({
+//       message: 'Payment berhasil',
+//       data: result.rows[0]
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
 exports.createPayment = async (req, res) => {
   const { va_id, amount, transfer_method } = req.body;
 
   if (!va_id || !amount || !transfer_method) {
     return res.status(400).json({
-      message: 'va_id, amount, dan transfer_method wajib diisi'
+      message: "va_id, amount, dan transfer_method wajib diisi",
     });
   }
 
-  // mapping ke format DB
+  // Mapping transfer method
   const transferMap = {
-    atm: 'ATM',
-    mobile_banking: 'MOBILE_BANKING',
-    branch: 'BRANCH',
-    other_bank: 'OTHER_BANK',
-    other_payment: 'OTHER_PAYMENT'
+    atm: "ATM",
+    mobile_banking: "MOBILE_BANKING",
+    branch: "BRANCH",
+    other_bank: "OTHER_BANK",
+    other_payment: "OTHER_PAYMENT",
   };
 
   const mappedTransfer = transferMap[transfer_method.toLowerCase()];
   if (!mappedTransfer) {
     return res.status(400).json({
-      message: 'transfer_method tidak valid'
+      message: "transfer_method tidak valid",
     });
   }
 
+  const client = await pool.connect();
+
   try {
-    const result = await pool.query(
+    await client.query("BEGIN");
+
+    // 🔍 Ambil VA
+    const vaResult = await client.query(
+      `SELECT * FROM "VirtualAccount" WHERE va_id = $1`,
+      [va_id]
+    );
+
+    if (vaResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Virtual Account not found" });
+    }
+
+    const va = vaResult.rows[0];
+
+    // ❌ Cegah double payment
+    if (va.payment_status === "paid") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        message: "Virtual Account sudah dibayar",
+      });
+    }
+
+    // ❌ Cegah bayar VA expired
+    if (va.expired_at && new Date(va.expired_at) < new Date()) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        message: "Virtual Account sudah expired",
+      });
+    }
+
+    // ✅ Insert Payment
+    const paymentResult = await client.query(
       `
       INSERT INTO "Payment"
-      (va_id, amount, transfer_method, payment_time)
-      VALUES ($1, $2, $3, NOW())
+      (va_id, amount, transfer_method, payment_date, status)
+      VALUES ($1, $2, $3, NOW(), 'SUCCESS')
       RETURNING *
       `,
       [va_id, amount, mappedTransfer]
     );
 
+    // ✅ Update VA → PAID
+    await client.query(
+      `
+      UPDATE "VirtualAccount"
+      SET
+        payment_status = 'paid',
+        status = 'expired'
+      WHERE va_id = $1
+      `,
+      [va_id]
+    );
+
+    await client.query("COMMIT");
+
     res.status(201).json({
-      message: 'Payment berhasil',
-      data: result.rows[0]
+      message: "Payment berhasil",
+      data: paymentResult.rows[0],
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    await client.query("ROLLBACK");
+    console.error("Create Payment Error:", err);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
   }
 };
+
 
 
 
