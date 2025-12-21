@@ -177,6 +177,32 @@ exports.createPayment = async (req, res) => {
 };
 
 
+// READ ALL
+exports.retrievePaymentPeriod = async (req, res) => {
+  const { start_date, end_date } = req.body;
+
+  if (!start_date || !end_date) {
+    return res.status(400).json({ message: "start_date dan end_date wajib diisi" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT p.*
+       FROM "Payment" p
+       WHERE p.payment_date BETWEEN
+             $1::date
+             AND ($2::date + INTERVAL '1 day' - INTERVAL '1 second')
+       ORDER BY p.payment_id DESC`,
+      [start_date, end_date]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 
 // READ ALL

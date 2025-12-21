@@ -6,7 +6,8 @@ const {
   getPayments,
   getPaymentById,
   updatePaymentStatus,
-  deletePayment
+  deletePayment,
+  retrievePaymentPeriod
 } = require('../controllers/paymentController');
 
 router.post('/', verifyToken, createPayment);
@@ -14,5 +15,6 @@ router.get('/', verifyToken, getPayments);
 router.get('/:id', verifyToken, getPaymentById);
 router.put('/:id', verifyToken, updatePaymentStatus);
 router.delete('/:id', verifyToken, deletePayment);
+router.post('/retrieve', verifyToken, retrievePaymentPeriod)
 
 module.exports = router;
