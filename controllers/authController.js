@@ -79,6 +79,7 @@ exports.login = async (req, res) => {
       {
         user_id: user.user_id,
         username: user.username,
+        user_type: user.user_type,
         client_id: client_id,
       },
       process.env.JWT_SECRET,
@@ -110,8 +111,8 @@ exports.register = async (req, res) => {
     institution_name,
     backend_service,
   } = req.body;
+
   const user_type = "client";
-  // const password = "user";
   const status = 0;
 
   try {
@@ -130,6 +131,7 @@ exports.register = async (req, res) => {
       'INSERT INTO "User" (username, password_hash, client_name, email, user_type, status) VALUES ($1, $2, $3, $4, $5, $6)',
       [username, hashedPassword, client_name, email, user_type, status]
     );
+
     await pool.query(
       'INSERT INTO "Client" (username, client_name, email, institution_name, institution_code, backend_service) VALUES ($1, $2, $3, $4, $5, $6)',
       [
@@ -143,7 +145,7 @@ exports.register = async (req, res) => {
     );
 
     await transporter.sendMail({
-      from: `"VAHUB Admin" <${process.env.EMAIL_USER}>`,
+      from: `"VAHUB Admin" <${process.env.MAIL_USER}>`,
       to: email,
       subject: "Username dan Password Akun VAHUB",
       html: `
@@ -157,6 +159,29 @@ exports.register = async (req, res) => {
     res.status(201).json({ message: "Client berhasil dibuat & email terkirim" });
   } catch (error) {
     console.error("Register error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.activateAccount = async (req, res) => {
+  const { user_id, new_password } = req.body;
+
+  try {
+    // Hash password baru
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+
+    // Update password & status = 1
+    await pool.query(
+      `UPDATE "User"
+       SET password_hash = $1,
+           status = 1
+       WHERE user_id = $2`,
+      [hashedNewPassword, user_id]
+    );
+
+    return res.status(200).json({ message: "Akun berhasil diaktifkan" });
+  } catch (error) {
+    console.error("activateAccount error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { login, register, changePassword } = require('../controllers/authController');
+const { login, register, activateAccount, changePassword } = require('../controllers/authController');
 const { verifyToken } = require('../middleware/authMiddleware'); // import middleware
 
 module.exports = router;
 // route login & register
 router.post('/login', login);
 router.post('/register', register);
-router.post('/changepassword', changePassword);
+
+router.post('/activate', verifyToken, activateAccount);
+router.post('/changepassword', verifyToken, changePassword);
 
 // route test JWT
 router.get('/profile', verifyToken, (req, res) => {

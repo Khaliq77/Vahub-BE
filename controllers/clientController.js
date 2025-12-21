@@ -1,45 +1,5 @@
 const pool = require("../config/db");
 
-// exports.createInstitution = async (req, res) => {
-//   try {
-//     const {
-//       institution_code,
-//       institution_name,
-//       client_name,
-//       login_id,
-//       email,
-//       backend_service,
-//     } = req.body;
-
-//     // Cek duplicate institution
-//     const check = await pool.query(
-//       `SELECT client.id FROM "Institution" WHERE institution_name = $1`,
-//       [institution_name]
-//     );
-
-//     if (check.rows.length > 0) {
-//       return res.status(400).json({ message: "Institution sudah terdaftar" });
-//     }
-
-//     const result = await pool.query(
-//       `INSERT INTO "Institution" (institution_code,institution_name, client_name, login_id, email, backend_service)
-//        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-//       [
-//         institution_code,
-//         institution_name,
-//         client_name,
-//         login_id,
-//         email,
-//         backend_service,
-//       ]
-//     );
-//     res.status(201).json(result.rows[0]);
-//   } catch (error) {
-//     console.error("Create institution error:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
 // READ ALL
 exports.getClients = async (req, res) => {
   try {

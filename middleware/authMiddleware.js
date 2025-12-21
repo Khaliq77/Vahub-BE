@@ -11,30 +11,28 @@ exports.verifyToken = async (req, res, next) => {
   }
 
   try {
-    // Verifikasi token pakai secret di .env
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // simpan data user ke req (misalnya user_id, username)
-    // Pastikan token punya username
-    if (!decoded.username) {
-      return res.status(400).json({ message: "Username tidak ada di token" });
+    req.user = decoded;
+
+    // 🔑 ADMIN: langsung lolos
+    if (decoded.user_type === "admin") {
+      req.client_id = null;
+      return next();
     }
 
-    // Ambil client_id berdasarkan username
-    const result = await pool.query(
-      `SELECT client_id FROM "Client" WHERE username = $1`,
-      [decoded.username]
-    );
+    // 🔑 CLIENT: WAJIB punya client_id
+    if (decoded.user_type === "client") {
+      if (!decoded.client_id) {
+        return res
+          .status(403)
+          .json({ message: "Client ID tidak ditemukan di token" });
+      }
 
-    if (result.rows.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Client ID tidak ditemukan untuk username ini" });
+      req.client_id = decoded.client_id;
+      return next();
     }
 
-    // Simpan client_id untuk digunakan controller VA
-    req.client_id = result.rows[0].client_id;
-
-    next(); // lanjut ke route berikutnya
+    return res.status(403).json({ message: "User type tidak dikenali" });
   } catch (error) {
     console.error("JWT verify error:", error.message);
     return res
