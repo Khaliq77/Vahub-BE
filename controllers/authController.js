@@ -163,28 +163,81 @@ exports.register = async (req, res) => {
   }
 };
 
+// exports.activateAccount = async (req, res) => {
+//   const { username, user_id, new_password } = req.body;
+
+//   // Ambil user berdasarkan username
+//   const result = await pool.query(
+//     'SELECT * FROM "User" WHERE username = $1',
+//     [username]
+//   );
+
+
+//   try {
+//     // Hash password baru
+//     const hashedNewPassword = await bcrypt.hash(new_password, 10);
+
+//     // Update password & status = 1
+//     await pool.query(
+//       `UPDATE "User"
+//        SET password_hash = $1,
+//            status = 1
+//        WHERE user_id = $2`,
+//       [hashedNewPassword, user_id]
+//     );
+
+//     return res.status(200).json({ message: "Akun berhasil diaktifkan" });
+//   } catch (error) {
+//     console.error("activateAccount error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 exports.activateAccount = async (req, res) => {
-  const { user_id, new_password } = req.body;
+  const { username, new_password } = req.body;
+
+  if (!username || !new_password) {
+    return res.status(400).json({ message: "Username dan password wajib diisi" });
+  }
 
   try {
-    // Hash password baru
-    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+    // Cek user
+    const result = await pool.query(
+      'SELECT user_id, status FROM "User" WHERE username = $1',
+      [username]
+    );
 
-    // Update password & status = 1
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    const user = result.rows[0];
+
+    if (user.status === 1) {
+      return res.status(400).json({ message: "Akun sudah aktif" });
+    }
+
+    // Hash password baru
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    // Update password & status
     await pool.query(
       `UPDATE "User"
        SET password_hash = $1,
            status = 1
        WHERE user_id = $2`,
-      [hashedNewPassword, user_id]
+      [hashedPassword, user.user_id]
     );
 
-    return res.status(200).json({ message: "Akun berhasil diaktifkan" });
+    return res.status(200).json({
+      message: "Akun berhasil diaktifkan"
+    });
   } catch (error) {
     console.error("activateAccount error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.changePassword = async (req, res) => {
   const { username, old_password, new_password } = req.body;
