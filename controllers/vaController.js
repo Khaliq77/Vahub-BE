@@ -211,15 +211,17 @@ exports.getVAById = async (req, res) => {
 exports.updateVA = async (req, res) => {
   try {
     const { id } = req.params;
-    const { va_number, customer_name } = req.body;
+    const { va_number, customer_name, billing_amount, description } = req.body;
 
     const result = await pool.query(
       `UPDATE "VirtualAccount"
        SET va_number = $1,
-           customer_name = $2
-       WHERE va_id = $3
+           customer_name = $2,
+           billing_amount = $3,
+           description = $4
+       WHERE va_id = $5
        RETURNING *`,
-      [va_number, customer_name, id]
+      [va_number, customer_name, billing_amount, description, id]
     );
 
     if (result.rows.length === 0) {
@@ -245,10 +247,7 @@ exports.deleteVA = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await pool.query(
-      'DELETE FROM "VirtualAccount" WHERE va_id = $1',
-      [id]
-    );
+    await pool.query('DELETE FROM "VirtualAccount" WHERE va_id = $1', [id]);
 
     res.json({ message: "Virtual Account deleted successfully" });
   } catch (error) {
