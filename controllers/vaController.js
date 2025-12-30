@@ -6,8 +6,8 @@ const pool = require("../config/db");
  * =========================
  */
 const resolveVAStatus = (va) => {
-  if (va.status === "paid") return "paid";
-  if (va.status === "cancelled") return "cancelled";
+  // if (va.status === "paid") return "paid";
+  // if (va.status === "cancelled") return "cancelled";
 
   if (va.expired_at && new Date(va.expired_at) < new Date()) {
     return "expired";
@@ -113,7 +113,7 @@ exports.createVA = async (req, res) => {
         VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,
           'unpaid','active',
-          NOW() + INTERVAL '24 HOURS',
+          NOW() + INTERVAL '1 MINUTE',
           NOW()
         )
         RETURNING *

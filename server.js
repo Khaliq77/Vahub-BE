@@ -45,3 +45,12 @@ app.use("/api/institution-list", institutionListRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
+
+
+const dotenv = require("dotenv");
+const expireVirtualAccountJob = require("./jobs/vaExpireJob");
+
+dotenv.config();
+
+// 🔥 START CRON JOB
+expireVirtualAccountJob();
