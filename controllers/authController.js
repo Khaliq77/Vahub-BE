@@ -293,3 +293,55 @@ exports.changePassword = async (req, res) => {
 //   console.error("Register error:", error);
 //   res.status(500).json({ message: "Server error" });
 // }
+
+exports.resetAccount = async (req, res) => {
+  const { username } = req.body;
+  try {
+    // 1. Ambil user
+    const userResult = await pool.query(
+      'SELECT * FROM "User" WHERE username = $1',
+      [username]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = userResult.rows[0];
+
+    // 2. Generate password baru
+    const plainPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    // 3. Update password + status inactive
+    await pool.query(
+      `UPDATE "User"
+       SET password_hash = $1,
+           status = 0
+       WHERE username = $2`,
+      [hashedPassword, username]
+    );
+
+    // 4. Kirim email
+    await transporter.sendMail({
+      from: `"VAHUB Admin" <${process.env.MAIL_USER}>`,
+      to: user.email,
+      subject: "Reset Akun VAHUB",
+      html: `
+        <h3>Reset Akun VAHUB</h3>
+        <p>Akun Anda telah di-reset oleh Admin.</p>
+        <p><b>Username:</b> ${username}</p>
+        <p><b>Password Baru:</b> ${plainPassword}</p>
+        <p>Status akun Anda saat ini <b>Inactive</b>.</p>
+        <p>Silakan login dan lakukan aktivasi akun.</p>
+      `,
+    });
+
+    return res.json({
+      message: "Account reset successfully & email sent",
+    });
+  } catch (error) {
+    console.error("resetAccount error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
