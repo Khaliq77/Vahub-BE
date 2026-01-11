@@ -4,7 +4,7 @@ const pool = require("../config/db");
 exports.getClients = async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM "Client" ORDER BY client_id ASC'
+      'SELECT * FROM "Client" ORDER BY created_at DESC'
     );
     res.json(result.rows);
   } catch (error) {
