@@ -44,6 +44,15 @@ exports.createVA = async (req, res) => {
       return res.status(400).json({ message: "Client not found" });
     }
 
+    const toWIB = (date) => {
+      if (!date) return null;
+      return new Date(date).toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour12: false,
+      });
+    };
+
+
     const results = [];
 
     for (const item of data) {
@@ -86,14 +95,6 @@ exports.createVA = async (req, res) => {
         [va_number]
       );
 
-      if (checkVA.rows.length > 0) {
-        return res.status(400).json({
-          message: "VA Number sudah digunakan",
-          va_number,
-        });
-      }
-
-      // ✅ INSERT VA
       const result = await pool.query(
         `
         INSERT INTO "VirtualAccount" (
@@ -113,8 +114,8 @@ exports.createVA = async (req, res) => {
         VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,
           'unpaid','active',
-          NOW() + INTERVAL '1 MINUTE',
-          NOW()
+          (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 MINUTE',
+          NOW() AT TIME ZONE 'Asia/Jakarta'
         )
         RETURNING *
         `,
@@ -133,10 +134,19 @@ exports.createVA = async (req, res) => {
       results.push(result.rows[0]);
     }
 
+    // res.status(201).json({
+    //   message: "VA berhasil dibuat",
+    //   total: results.length,
+    //   data: results,
+    // });
     res.status(201).json({
       message: "VA berhasil dibuat",
       total: results.length,
-      data: results,
+      data: results.map((va) => ({
+        ...va,
+        created_at: toWIB(va.created_at),
+        expired_at: toWIB(va.expired_at),
+      })),
     });
   } catch (error) {
     console.error("Create VA error:", error);
@@ -211,17 +221,15 @@ exports.getVAById = async (req, res) => {
 exports.updateVA = async (req, res) => {
   try {
     const { id } = req.params;
-    const { va_number, customer_name, billing_amount, description } = req.body;
+    const { va_number, customer_name } = req.body;
 
     const result = await pool.query(
       `UPDATE "VirtualAccount"
        SET va_number = $1,
-           customer_name = $2,
-           billing_amount = $3,
-           description = $4
-       WHERE va_id = $5
+           customer_name = $2
+       WHERE va_id = $3
        RETURNING *`,
-      [va_number, customer_name, billing_amount, description, id]
+      [va_number, customer_name, id]
     );
 
     if (result.rows.length === 0) {
@@ -247,7 +255,10 @@ exports.deleteVA = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await pool.query('DELETE FROM "VirtualAccount" WHERE va_id = $1', [id]);
+    await pool.query(
+      'DELETE FROM "VirtualAccount" WHERE va_id = $1',
+      [id]
+    );
 
     res.json({ message: "Virtual Account deleted successfully" });
   } catch (error) {
