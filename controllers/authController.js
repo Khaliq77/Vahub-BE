@@ -365,8 +365,7 @@ exports.resetAccount = async (req, res) => {
 
           <p>
             Kepada Yth,<br/>
-            <b>${user.institution_name}</b><br/>
-            ${user.client_name}<br/>
+            <b>${user.client_name}</b><br/>
             di Tempat
           </p>
 
