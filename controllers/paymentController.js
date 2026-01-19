@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 // // CREATE
 // exports.createPayment = async (req, res) => {
@@ -30,7 +30,6 @@ const pool = require('../config/db');
 //     res.status(500).json({ message: 'Server error' });
 //   }
 // };
-
 
 // exports.createPayment = async (req, res) => {
 //   const { va_id, amount, transfer_method } = req.body;
@@ -77,7 +76,6 @@ const pool = require('../config/db');
 //     res.status(500).json({ message: 'Server error' });
 //   }
 // };
-
 
 exports.createPayment = async (req, res) => {
   const { va_id, amount, transfer_method } = req.body;
@@ -176,13 +174,14 @@ exports.createPayment = async (req, res) => {
   }
 };
 
-
 // READ ALL
 exports.retrievePaymentPeriod = async (req, res) => {
   const { start_date, end_date } = req.body;
 
   if (!start_date || !end_date) {
-    return res.status(400).json({ message: "start_date dan end_date wajib diisi" });
+    return res
+      .status(400)
+      .json({ message: "start_date dan end_date wajib diisi" });
   }
 
   try {
@@ -199,11 +198,42 @@ exports.retrievePaymentPeriod = async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.log("error", error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+exports.retrievePaymentAndVAPeriod = async (req, res) => {
+  const { start_date, end_date } = req.body;
 
+  if (!start_date || !end_date) {
+    return res
+      .status(400)
+      .json({ message: "start_date dan end_date wajib diisi" });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT 
+        p.*,
+        va.*
+      FROM "Payment" p
+      LEFT JOIN "VirtualAccount" va
+        ON p.va_id = va.va_id
+      WHERE p.payment_date BETWEEN
+            $1::date
+            AND ($2::date + INTERVAL '1 day' - INTERVAL '1 second')
+      ORDER BY p.payment_id DESC
+      `,
+      [start_date, end_date]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // READ ALL
 exports.getPayments = async (req, res) => {
@@ -216,7 +246,7 @@ exports.getPayments = async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -233,11 +263,11 @@ exports.getPaymentById = async (req, res) => {
     );
 
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Payment not found' });
+      return res.status(404).json({ message: "Payment not found" });
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -255,11 +285,11 @@ exports.updatePaymentStatus = async (req, res) => {
     );
 
     if (result.rows.length === 0)
-      return res.status(404).json({ message: 'Payment not found' });
+      return res.status(404).json({ message: "Payment not found" });
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -268,8 +298,8 @@ exports.deletePayment = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM "Payment" WHERE payment_id = $1', [id]);
-    res.json({ message: 'Payment deleted successfully' });
+    res.json({ message: "Payment deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };

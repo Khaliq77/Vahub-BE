@@ -145,14 +145,47 @@ exports.register = async (req, res) => {
     );
 
     await transporter.sendMail({
-      from: `"VAHUB Admin" <${process.env.MAIL_USER}>`,
+      from: `"BSN Vahub" <${process.env.MAIL_USER}>`,
       to: email,
-      subject: "Username dan Password Akun VAHUB",
+      subject: "Aktivasi Akun Layanan BSN Vahub",
       html: `
-        <h3>Akun VAHUB Berhasil Dibuat</h3>
-        <p><b>Username:</b> ${username}</p>
-        <p><b>Password:</b> ${plainPassword}</p>
-        <p>Silakan login dan segera ganti password Anda.</p>
+        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #000;">
+          <p>
+            Kepada Yth,<br/>
+            <b>${institution_name}</b><br/>
+            ${client_name}<br/>
+            di Tempat
+          </p>
+
+          <p>
+            Terima kasih telah mendaftar di layanan <b>BSN Vahub</b>.
+            Anda dapat mengaktifkan akun dengan melakukan login menggunakan
+            username dan password berikut, kemudian melakukan penggantian kata sandi.
+          </p>
+
+          <table style="margin: 16px 0;">
+            <tr>
+              <td style="padding-right: 10px;"><b>Username</b></td>
+              <td>: ${username}</td>
+            </tr>
+            <tr>
+              <td style="padding-right: 10px;"><b>Password</b></td>
+              <td>: ${plainPassword}</td>
+            </tr>
+          </table>
+
+          <p>
+            Mohon segera aktivasi akun dengan melakukan penggantian kata sandi dan tidak memberitahukan
+            informasi akun kepada siapa pun.
+          </p>
+
+          <br/>
+
+          <p>
+            Salam Hangat,<br/>
+            <b>PT Bank Syariah Nasional</b><br/>
+          </p>
+        </div>
       `,
     });
 
@@ -324,18 +357,53 @@ exports.resetAccount = async (req, res) => {
 
     // 4. Kirim email
     await transporter.sendMail({
-      from: `"VAHUB Admin" <${process.env.MAIL_USER}>`,
+      from: `"BSN Vahub" <${process.env.MAIL_USER}>`,
       to: user.email,
-      subject: "Reset Akun VAHUB",
+      subject: "Reset Akun Layanan BSN Vahub",
       html: `
-        <h3>Reset Akun VAHUB</h3>
-        <p>Akun Anda telah di-reset oleh Admin.</p>
-        <p><b>Username:</b> ${username}</p>
-        <p><b>Password Baru:</b> ${plainPassword}</p>
-        <p>Status akun Anda saat ini <b>Inactive</b>.</p>
-        <p>Silakan login dan lakukan aktivasi akun.</p>
-      `,
+        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #000;">
+
+          <p>
+            Kepada Yth,<br/>
+            <b>${user.client_name}</b><br/>
+            di Tempat
+          </p>
+
+          <p>
+            Sehubungan dengan permintaan pengelolaan akun, kami informasikan bahwa
+            akun Anda pada layanan <b>BSN Vahub</b> telah dilakukan proses <b>reset akun</b>
+            oleh Admin.
+          </p>
+
+          <table style="margin: 16px 0;">
+            <tr>
+              <td><b>Username</b></td>
+              <td>: ${username}</td>
+            </tr>
+            <tr>
+              <td><b>Password Sementara</b></td>
+              <td>: ${plainPassword}</td>
+            </tr>
+          </table>
+
+          <p>
+            Silakan login ke sistem BSN Vahub menggunakan kredensial di atas dan
+            segera melakukan <b>aktivasi akun serta penggantian kata sandi</b>.
+          </p>
+
+          <p style="color:#b91c1c;">
+            Demi keamanan, mohon tidak membagikan informasi akun kepada pihak mana pun.
+          </p>
+
+          <br/>
+          <p>
+            Salam Hangat,<br/>
+            <b>PT Bank Syariah Nasional</b><br/>
+          </p>
+        </div>
+      `
     });
+
 
     return res.json({
       message: "Account reset successfully & email sent",
